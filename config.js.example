@@ -1,0 +1,47 @@
+
+// Connection settings
+const MAIN_NICK = '[MusicBot]';
+const MY_NICK = process.env.BOTNAME || MAIN_NICK;
+const CHANN_NAME = process.env.CHANN || (IS_TESTNET ? 'OpenSource Island' : 'Dragons Den');
+const IS_TESTNET = (MY_NICK !== MAIN_NICK);
+const MUMBLE_HOST = process.env.MUMBLE_HOST || 'bitcoinmumble.com';
+// Auth
+const AUTH_KEY = '/root/mumbledjnode/certz2/dj2bot-key.pem';
+const AUTH_CERT = '/root/mumbledjnode/certz2/dj2bot-cert.pem';
+
+// Bot access
+const ADMINS = [
+  '_GIBUS_',
+  'SirMeow',
+  'BeautyBubble',
+  'BTCMOP',
+  'davyd',
+  'MrHodl',
+  'GizmoTN',
+  'phoog',
+  'Scam',
+  'shinobimonkey',
+  'v33r',
+  'velo',
+  'Xenophon'
+];
+
+// Player settings
+const MAX_VOL = 0.3;
+const MIN_VOL = 0.01;
+const DEFAULT_VOL = 0.02;
+
+
+module.exports = {
+  MAIN_NICK,
+  MY_NICK,
+  IS_TESTNET,
+  CHANN_NAME,
+  AUTH_KEY,
+  AUTH_CERT,
+  MUMBLE_HOST,
+  ADMINS,
+  MAX_VOL,
+  MIN_VOL,
+  DEFAULT_VOL,
+};
