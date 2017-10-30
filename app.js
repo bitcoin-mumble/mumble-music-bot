@@ -72,7 +72,7 @@ function hasAdminAccess(user) {
 
 // Callback for every mumble incoming message
 function onMsg(msg, user, scope){
-  msg = striptags(msg.trim()); // Cleanup
+  msg = striptags(msg).trim(); // Cleanup
 
   if (['channel', 'private'].indexOf(scope) === -1){
     return;
