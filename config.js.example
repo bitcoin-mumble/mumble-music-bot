@@ -2,8 +2,8 @@
 // Connection settings
 const MAIN_NICK = '[MusicBot]';
 const MY_NICK = process.env.BOTNAME || MAIN_NICK;
-const CHANN_NAME = process.env.CHANN || (IS_TESTNET ? 'OpenSource Island' : 'Dragons Den');
 const IS_TESTNET = (MY_NICK !== MAIN_NICK);
+const CHANN_NAME = process.env.CHANN || (IS_TESTNET ? 'OpenSource Island' : 'Dragons Den');
 const MUMBLE_HOST = process.env.MUMBLE_HOST || 'bitcoinmumble.com';
 // Auth
 const AUTH_KEY = '/root/mumbledjnode/certz2/dj2bot-key.pem';
