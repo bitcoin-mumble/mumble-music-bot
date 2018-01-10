@@ -177,7 +177,7 @@ function onMsg(msg, user, scope){
   } else if (msg === '!vol') {
     user.sendMessage('Current volume: <b>' + djVolume + '</b> (Min: ' + MIN_VOL+' - Max: ' + MAX_VOL + ')');
   // HOOK: set volume
-  } else if (msg.indexOf('!vol ') === 0) {
+  } else if (msg.indexOf('!vol ') === 0 || msg.indexOf('!v ') === 0) {
     if (!hasAccess(user)) return;
     try {
       var vol = parseFloat(msg.split(' ')[1], 10);
