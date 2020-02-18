@@ -514,7 +514,7 @@ function getCurrenTrack() {
 
 ////////// PLAYING
 const ffmpeg = require('fluent-ffmpeg');
-const ytdl = require('ytdl-core');
+// const ytdl = require('ytdl-core');
 const yasStream = require('youtube-audio-stream');
 const youtubedl = require('ejoy-youtube-dl');
 

@@ -13,7 +13,6 @@
     "lame": "^1.2.4",
     "mumble": "^0.3.21",
     "striptags": "^3.0.1",
-    "youtube-audio-stream": "^0.3.5",
-    "ytdl-core": "^0.20.4"
+    "youtube-audio-stream": "^0.3.5"
   }
 }
