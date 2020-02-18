@@ -17,7 +17,7 @@ const CONFIG = initConfig;
 
 const {
   ADMINS, MAIN_NICK, MY_NICK, CHANN_NAME,
-  MAX_VOL, MIN_VOL, DEFAULT_VOL,
+  MAX_VOL, MIN_VOL, DEFAULT_VOL, ACCESS_TOKENS,
 } = CONFIG;
 
 // State vars
@@ -34,6 +34,7 @@ function exitHandler(options, err) {
     if (options.cleanup) console.log('clean');
     if (err) console.log(err.stack);
     if (options.exit) {
+	console.log('[exitHandler] exiting in 100ms', options);
         setTimeout(function() {
             process.exit();
         }, 100);
@@ -64,7 +65,9 @@ function hasAccess(user) {
 
 function hasAdminAccess(user) {
   if (!user.isRegistered()) {
-    return user.sendMessage('- ERR: Ohey, this is for admins only you cheeky bastard');
+    // TODO: Fix auth bug
+    user.sendMessage('- ERR: Oh hey, this is for admins only you cheeky bastard');
+    return false;
   }
   return (ADMINS.indexOf(user.name) !== -1);
 }
@@ -79,11 +82,22 @@ function onMsg(msg, user, scope){
   }
   if (msg[0] === '!') {
     // Log commands
-    console.log('[MSGLOG] scope(' + scope + ') user(' + user.name + ') MSG:', msg);
+    //console.log('[MSGLOG] scope(' + scope + ') user(' + user.name + ') MSG:', msg);
+    if (msg && msg.length < 5000) {
+       console.log(new Date(), '[MSGLOG] scope(' + scope + ') user(' + user.name + ') MSG:', JSON.stringify(msg));
+    } else {
+       console.log(new Date(), '[MSGLOG] scope(' + scope + ') user(' + user.name + ') MSG:', (msg ? '~too lengthy' : '~empty'));
+    }
+
   } else {
     // Accidental PM protection
     if (scope === 'private') {
-      user.sendMessage("[I AM A BOT] Either you sent me an invalid command or you PMed me by mistake. Don't be a cuck");
+      user.sendMessage("[I AM A BOT] Either you sent me an invalid command or you PMed me by mistake. Don't be a cuck (send me !help for help)");
+    }
+    if (msg && msg.length < 5000) {
+       console.log(new Date(), '[MSGLOG-no!] scope(' + scope + ') user(' + user.name + ') MSG:', JSON.stringify(msg));
+    } else {
+       console.log('[MSGLOG-no!] scope(' + scope + ') user(' + user.name + ') MSG:', (msg ? '~too lengthy' : '~empty'));
     }
     return;
   }
@@ -100,8 +114,8 @@ function onMsg(msg, user, scope){
   }
 
   // HOOK: Restart
-  if (hasAdminAccess(user)) {
-    if (msg === '!kill' || msg === '!restart' || msg === '!reboot') {
+  if (msg === '!kill' || msg === '!restart' || msg === '!reboot') {
+    if (hasAdminAccess(user)) {
       return process.exit(0);
     }
   }
@@ -109,7 +123,7 @@ function onMsg(msg, user, scope){
   // HOOK: Add youtube to queue
   if (msg.indexOf('!add ') === 0 || msg.indexOf('!a ') === 0) {
     var yturl = msg.split(' ')[1];
-    if (CONFIG.IS_TESTNET || (yturl.match(/https?:\/\/(www\.)?youtube\.com.+/) || yturl.match(/https?:\/\/(www\.)?youtu\.be.+/))) {
+    if (CONFIG.IS_TESTNET || (yturl.match(/https?:\/\/(www\.)?youtube\.com.+/) || yturl.match(/https?:\/\/(m\.)?youtube\.com.+/) || yturl.match(/https?:\/\/(www\.)?youtu\.be.+/))) {
       var song = new Song({
         url: yturl,
         owner: user.name,
@@ -119,7 +133,11 @@ function onMsg(msg, user, scope){
         // chann.sendMessage('- Song starting...');
       } else {
         // TODO: depending on scope reply on private or channel
-        chann.sendMessage('- Song queued');
+        if (scope === 'private') {
+           user.sendMessage('- Song queued');
+        } else {
+           chann.sendMessage('- Song queued');
+        }
       }
     } else {
       console.log('- WARN: Invalid yturl:', yturl);
@@ -335,16 +353,22 @@ function onMsg(msg, user, scope){
   }
 }
 
+function onConnError(err) {
+  console.error('[onConnError]', err);
+  process.exit(1);
+}
+
 // Callback when connected to Mumble
 function onMumbleConnected(error, connection) {
   if (error) { console.log('[CONNECT] ERR:', error); throw new Error(error); }
 
   console.log('(onConnect) Connected');
   conn = connection;
-  connection.authenticate(MY_NICK);
+  connection.authenticate(MY_NICK, '', ACCESS_TOKENS);
   // Hooks
   connection.on('initialized', onAuthed);
   connection.on('message', onMsg);
+  connection.on('error', onConnError);
 }
 
 // MUMBLE CONNECTION
@@ -489,9 +513,12 @@ function getCurrenTrack() {
 
 
 ////////// PLAYING
+const ffmpeg = require('fluent-ffmpeg');
+const ytdl = require('ytdl-core');
 const yasStream = require('youtube-audio-stream');
 const youtubedl = require('ejoy-youtube-dl');
-const TRY_NEW = process.env.TRY_NEW || false; // Try new Youtube streaming module
+
+const corkPerSong = 0; //ms
 
 const Decoder = require('lame').Decoder;
 var currentStream;
@@ -528,7 +555,7 @@ function playSong(song, src) {
         if (currentlyPlaying) {
           process.nextTick(() => mumbleInput.uncork());
         }
-      }, 5000);
+      }, corkPerSong);
 
       mumbleInput
         .once('pipe', function() {
@@ -572,41 +599,11 @@ function playSong(song, src) {
       }
     }
 
-    if (TRY_NEW) {
-      currentStream = youtubedl(song.url, ['--format=43']) //, {}, { highWaterMark: 512 * 1024 })
-        .on('info', function(info) {
-          console.log('YTINFO:', typeof JSON.stringify(info));
-          song.setTitle(info.title);
-          song.setArtist(info.uploader);
-          if (info.length_seconds) {
-            var x = info.duration.split(':');
-            song.setDurationSeconds(((x[0] || 0) * 60) + x[1]);
-          } else {
-            console.log('- [WARN] YT Didnt have length:', info);
-          }
-        })
-        .on('complete', function() {
-          console.log('YT[0] - compelted'); // ?
-        })
-        .pipe(decoder)
-        .on('start', function() {
-          console.log('YT[2] - starting...');
-        })
-        .on('finish', function() {
-          console.log('YT[2]? - finished', '(Had currentPlayStartedStreamingToMumble:', currentPlayStartedStreamingToMumble?'YES':'NO',')'); // early - when decoding ends
-          if (!currentPlayStartedStreamingToMumble) {
-            console.log('YT[2]? - afterPlayDone - Probably skipped before it even started');
-          }
-        })
-        .on('end', function() {
-          console.log('YT[2] - ended'); // when finished playing track [1st]
-          currentlyPlaying = false; // not sure
-        })
-        .on('error', function(err) {
-          console.log('YT[2] - errored:', err);
-        });
-    } else {
-      currentStream = yasStream(song.url, {}, { highWaterMark: 512 * 1024 })
+    if (1) {
+      console.log('YT-STREAM');
+      var ytdlOpts = { highWaterMark: 2 * 1024 * 1024 }; // bytes
+      var throughOpts = { highWaterMark: 2 * 1024 * 1024 }; // bytes
+      currentStream = yasStream(song.url, {}, ytdlOpts, throughOpts) // , {}, { highWaterMark: 512 * 1024 })
         .on('info', function(info) {
           song.setTitle(info.title);
           song.setArtist(info.author.name);
@@ -634,6 +631,8 @@ function playSong(song, src) {
         .on('error', function(err) {
           console.log('YT[2] - errored:', err);
         });
+      currentStream.cork();
+      setTimeout(() => { currentStream.uncork() }, corkPerSong);
     }
 
   } catch (e) {

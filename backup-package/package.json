@@ -1,6 +1,6 @@
 {
   "name": "mumble-music-bot",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "description": "Music bot for Mumble",
   "main": "app.js",
   "scripts": {
@@ -11,9 +11,9 @@
   "dependencies": {
     "ejoy-youtube-dl": "^1.11.3",
     "lame": "^1.2.4",
-    "mumble": "^0.3.21",
+    "mumble": "^0.3.16",
     "striptags": "^3.0.1",
-    "youtube-audio-stream": "^0.3.5",
-    "ytdl-core": "^0.20.4"
+    "youtube-audio-stream": "git://github.com/cryptagoras/youtube-audio-stream.git#ytdlopts-4",
+    "ytdl-core": "^0.20.1"
   }
 }
