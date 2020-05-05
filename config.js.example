@@ -4,6 +4,7 @@ const MAIN_NICK = '[MusicBot]';
 const MY_NICK = process.env.BOTNAME || MAIN_NICK;
 const IS_TESTNET = (MY_NICK !== MAIN_NICK);
 const CHANN_NAME = process.env.CHANN || (IS_TESTNET ? 'OpenSource Island' : 'Dragons Den');
+const CHANN_ID_FALLBACK = process.env.CHANN_ID_FALLBACK || 17;
 const MUMBLE_HOST = process.env.MUMBLE_HOST || 'bitcoinmumble.com';
 // Auth
 const AUTH_KEY = '/root/mumbledjnode/certz2/dj2bot-key.pem';
@@ -37,6 +38,7 @@ module.exports = {
   MY_NICK,
   IS_TESTNET,
   CHANN_NAME,
+  CHANN_ID_FALLBACK,
   AUTH_KEY,
   AUTH_CERT,
   MUMBLE_HOST,

@@ -16,7 +16,7 @@ try {
 const CONFIG = initConfig;
 
 const {
-  ADMINS, MAIN_NICK, MY_NICK, CHANN_NAME,
+  ADMINS, MAIN_NICK, MY_NICK, CHANN_NAME, CHANN_ID_FALLBACK,
   MAX_VOL, MIN_VOL, DEFAULT_VOL, ACCESS_TOKENS,
 } = CONFIG;
 
@@ -389,7 +389,22 @@ mumble.connect('mumble://' + CONFIG.MUMBLE_HOST, mumbleConnOpts, onMumbleConnect
 function onAuthed() {
   console.log( '(onAuthed) Connection initialized' );
   // Connection is authenticated and usable.
-  chann = conn.channelByName(CHANN_NAME);
+  var children = conn.rootChannel.children;
+  var channId = null;
+  var regexp = new RegExp(CHANN_NAME + '.*');
+  for (var x in conn.rootChannel.children) {
+    if (regexp.test(children[x].name)) {
+      // console.debug('conn.rootChannel.children[' + x + '] id: ' + children[x].id + ', name: ' + children[x].name);
+      channId = children[x].id;
+    }
+  }
+  console.log('@channId:', channId);
+  if (channId === null) {
+    console.error('[ERR] couldnt find channId:', channId, ' # Proceeding with fallback:', CHANN_ID_FALLBACK);
+    channId = CHANN_ID_FALLBACK;
+  }
+  //chann = conn.channelByName(CHANN_NAME);
+  chann = conn.channelById(channId);
   chann.join();
   conn.user.setComment('A <b>B</b>adly<b>U</b>preared musicbot. Send !help for more');
   READY_TO_MSG = true;
@@ -514,7 +529,6 @@ function getCurrenTrack() {
 
 ////////// PLAYING
 const ffmpeg = require('fluent-ffmpeg');
-// const ytdl = require('ytdl-core');
 const yasStream = require('youtube-audio-stream');
 const youtubedl = require('ejoy-youtube-dl');
 
